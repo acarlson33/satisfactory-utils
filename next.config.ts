@@ -5,13 +5,7 @@ const nextConfig = {
 
   // Image optimization configuration
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "satisfactory.wiki.gg",
-        pathname: "/images/**",
-      },
-    ],
+    remotePatterns: [],
     // Allow local images from public folder
     unoptimized: process.env.NODE_ENV === "development",
   },
