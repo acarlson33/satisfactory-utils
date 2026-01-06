@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePowerStore } from "@/lib/stores";
 import { generators as generatorData, fuelTypes } from "@/lib/data";
 import type { GeneratorId } from "@/types";
 
-export default function PowerPage() {
+function PowerPageInner() {
   const [selectedGenerator, setSelectedGenerator] =
     useState<GeneratorId | null>(null);
   const [selectedFuel, setSelectedFuel] = useState<string | null>(null);
@@ -563,5 +563,15 @@ export default function PowerPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PowerPage() {
+  return (
+    <Suspense
+      fallback={<div className="text-center">Loading power planner...</div>}
+    >
+      <PowerPageInner />
+    </Suspense>
   );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Factory, Zap, BookOpen, ArrowRight } from "lucide-react";
 
@@ -31,7 +32,7 @@ const features = [
   },
 ];
 
-export default function HomePage() {
+function HomeContent() {
   return (
     <div className="flex flex-col gap-12">
       {/* Hero Section */}
@@ -118,5 +119,13 @@ export default function HomePage() {
         </p>
       </section>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="text-center">Loading home...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

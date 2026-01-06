@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Save, RotateCcw, Moon, Sun } from "lucide-react";
 import {
   useSettingsStore,
@@ -18,7 +18,7 @@ const optimizationOptions: { value: OptimizationTarget; label: string }[] = [
   { value: "minimize-resources", label: "Minimize Resources" },
 ];
 
-export default function SettingsPage() {
+function SettingsPageInner() {
   const {
     gameVersion,
     theme,
@@ -435,5 +435,13 @@ export default function SettingsPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="text-center">Loading settings...</div>}>
+      <SettingsPageInner />
+    </Suspense>
   );
 }

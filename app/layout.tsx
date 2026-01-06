@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -34,9 +35,19 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ThemeWatcher />
-        <Navigation />
+        <Suspense
+          fallback={
+            <div className="sticky top-0 z-50 border-b border-border bg-background/95 px-4 py-3 text-sm text-muted-foreground">
+              Loading navigation…
+            </div>
+          }
+        >
+          <Navigation />
+        </Suspense>
         <main id="main-content" className="container mx-auto px-4 py-8">
-          {children}
+          <Suspense fallback={<div className="py-8 text-center">Loading…</div>}>
+            {children}
+          </Suspense>
         </main>
       </body>
     </html>

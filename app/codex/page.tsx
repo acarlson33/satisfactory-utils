@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Package, BookOpen, Building } from "lucide-react";
 
@@ -26,7 +27,7 @@ const categories = [
   },
 ];
 
-export default function CodexPage() {
+function CodexContent() {
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -96,6 +97,14 @@ export default function CodexPage() {
         </p>
       </section>
     </div>
+  );
+}
+
+export default function CodexPage() {
+  return (
+    <Suspense fallback={<div className="text-center">Loading codex...</div>}>
+      <CodexContent />
+    </Suspense>
   );
 }
 

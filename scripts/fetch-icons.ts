@@ -12,6 +12,7 @@ import path from "path";
 const API = "https://satisfactory.wiki.gg/api.php";
 const OUTPUT_DIR = path.resolve(process.cwd(), "public/images/items");
 const CATEGORY = "Category:Items";
+const FLUID_PAGE = "Fluids";
 const USER_AGENT =
   "satisfactory-utils-icon-fetcher/1.0 (+https://github.com/acarlson33/satisfactory-utils)";
 const REQUEST_DELAY_MS = 500;
@@ -64,6 +65,8 @@ const toPathname = (url: string) => {
 const isPng = (url: string) => toPathname(url).endsWith(".png");
 
 const isBlockedVersion = (url: string) => toPathname(url).includes("v0347");
+
+const isPngFileTitle = (title: string) => title.toLowerCase().endsWith(".png");
 
 async function fetchJson<T>(url: string, description: string): Promise<T> {
   let attempt = 0;
@@ -165,12 +168,14 @@ async function fetchLeadImageUrl(title: string): Promise<string | null> {
   );
   const files = parseJson.parse?.images || [];
   const fileTitle = files.find(
-    (f) =>
-      f.toLowerCase().endsWith(".png") && !f.toLowerCase().includes("v0347")
+    (f) => isPngFileTitle(f) && !f.toLowerCase().includes("v0347")
   );
   if (!fileTitle) return null;
 
-  // Resolve file to URL
+  return resolveFileUrl(fileTitle);
+}
+
+async function resolveFileUrl(fileTitle: string): Promise<string | null> {
   const fileParams = new URLSearchParams({
     action: "query",
     format: "json",
@@ -202,11 +207,51 @@ async function download(url: string, destPath: string) {
   await fs.writeFile(destPath, buf);
 }
 
+async function fetchFluidIcons() {
+  console.log(`Fetching fluid icons from ${FLUID_PAGE} page...`);
+  const parseParams = new URLSearchParams({
+    action: "parse",
+    format: "json",
+    page: FLUID_PAGE,
+    prop: "images",
+  });
+
+  const parseJson = await fetchJson<ParseImagesResponse>(
+    `${API}?${parseParams.toString()}`,
+    `parse images for ${FLUID_PAGE}`
+  );
+
+  const files = parseJson.parse?.images || [];
+  const fluidFiles = files.filter(
+    (file) => isPngFileTitle(file) && !file.toLowerCase().includes("v0347")
+  );
+
+  const results: { slug: string; url: string }[] = [];
+  for (const fileTitle of fluidFiles) {
+    const baseName = fileTitle.replace(/^File:/i, "").replace(/\.png$/i, "");
+    const slug = toSlug(baseName);
+    if (!slug) continue;
+
+    const url = await resolveFileUrl(fileTitle);
+    if (!url) {
+      console.warn(`No URL resolved for fluid image ${fileTitle}`);
+      continue;
+    }
+
+    results.push({ slug, url });
+  }
+
+  console.log(`Found ${results.length} fluid PNGs`);
+  return results;
+}
+
 async function main() {
   await ensureDir(OUTPUT_DIR);
   console.log(`Fetching item pages from ${CATEGORY}...`);
   const members = await fetchCategoryPages();
   console.log(`Found ${members.length} item pages`);
+  const fluidIcons = await fetchFluidIcons();
+  const seen = new Set<string>();
 
   let downloaded = 0;
   let skipped = 0;
@@ -217,6 +262,11 @@ async function main() {
       skipped++;
       continue;
     }
+    if (seen.has(slug)) {
+      skipped++;
+      continue;
+    }
+    seen.add(slug);
 
     let url: string | null = null;
     try {
@@ -239,6 +289,24 @@ async function main() {
       console.log(`Saved ${slug}.png`);
     } catch (error) {
       console.warn(`Failed ${slug}:`, error);
+      skipped++;
+    }
+  }
+
+  for (const fluid of fluidIcons) {
+    if (seen.has(fluid.slug)) {
+      skipped++;
+      continue;
+    }
+    seen.add(fluid.slug);
+
+    const destPath = path.join(OUTPUT_DIR, `${fluid.slug}.png`);
+    try {
+      await download(fluid.url, destPath);
+      downloaded++;
+      console.log(`Saved ${fluid.slug}.png (fluid)`);
+    } catch (error) {
+      console.warn(`Failed ${fluid.slug}:`, error);
       skipped++;
     }
   }

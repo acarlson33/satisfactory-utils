@@ -2,6 +2,8 @@
 const nextConfig = {
   // Enable React strict mode for better development experience
   reactStrictMode: true,
+  output: "standalone",
+  cacheComponents: true,
 
   // Image optimization configuration
   images: {
